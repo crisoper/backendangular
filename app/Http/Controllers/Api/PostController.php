@@ -5,18 +5,29 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class PostController extends Controller
 {
-     // 📄 GET /api/posts
-    public function index()
+    // GET /api/posts
+    public function index(Request $request)
     {
+        $parametros = $request->all();
+        $keySearch = Arr::get($parametros, 'keySearch', '');
+        $bySearch = Arr::get($parametros, 'bySearch', 'title');
+
+        $query = Post::with('comments');
+
+        if ($keySearch !== '') {
+            $query->where($bySearch, 'like', "%{$keySearch}%");
+        }
+
         return response()->json(
-            Post::with('comments')->get()
+            $query->get()
         );
     }
 
-    // 📄 POST /api/posts
+    // POST /api/posts
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -30,15 +41,24 @@ class PostController extends Controller
         return response()->json($post, 201);
     }
 
-    // 📄 GET /api/posts/{id}
-    public function show($id)
+    // GET /api/posts/{id}
+    public function show(Request $request, $id)
     {
-        $post = Post::with('comments')->findOrFail($id);
+        sleep(3);
+        $parametros = $request->all();
+        $sort = Arr::get($parametros, 'sort', 'asc');
+
+        $post = Post::with([
+            'comments' => function ($query) use ($sort) {
+                $query->orderBy('created_at', $sort);
+            }
+        ])
+        ->findOrFail($id);
 
         return response()->json($post);
     }
 
-    // 📄 PUT /api/posts/{id}
+    // PUT /api/posts/{id}
     public function update(Request $request, $id)
     {
         $post = Post::findOrFail($id);
@@ -54,7 +74,7 @@ class PostController extends Controller
         return response()->json($post);
     }
 
-    // 📄 DELETE /api/posts/{id}
+    // DELETE /api/posts/{id}
     public function destroy($id)
     {
         Post::destroy($id);
