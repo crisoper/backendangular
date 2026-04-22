@@ -44,7 +44,6 @@ class PostController extends Controller
     // GET /api/posts/{id}
     public function show(Request $request, $id)
     {
-        sleep(3);
         $parametros = $request->all();
         $sort = Arr::get($parametros, 'sort', 'asc');
 
